@@ -1,0 +1,24 @@
+{
+  "name": "trackifi-cart",
+  "version": "0.1.0",
+  "description": "Reusable shopping cart UI library with red GearVN-inspired styling.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "style": "src/styles.css",
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "cart",
+    "shopping-cart",
+    "ui-library",
+    "vanilla-js"
+  ],
+  "scripts": {
+    "check": "node -c src/index.js"
+  },
+  "author": "Le Van Phat - 22110196",
+  "license": "MIT"
+}
