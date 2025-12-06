@@ -38,7 +38,6 @@ export const createInput = ({ label, name, type = "text", placeholder, value = "
     value,
     required: required ? "true" : undefined,
     step: type === "number" ? "0.01" : undefined,
-    min: type === "number" ? "0" : undefined,
     min: type === "number" ? "0" : undefined
   });
   wrapper.append(span, input);

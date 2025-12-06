@@ -1,81 +1,98 @@
 # Trackifi Cart UI
 
-Reusable shopping cart UI library with full CRUD, GearVN-inspired red styling, and zero external dependencies. Ships standardized building blocks (inputs, buttons, modals, cards) plus a ready-made `CartUI` class you can mount into any project.
+A zero-dependency shopping cart UI kit with GearVN-inspired red styling. Ships a ready-to-mount `CartUI` plus small UI atoms (button, input, card, modal) you can reuse in any project.
 
-## Features
-- Add, edit, delete items with inline modal flow and total summary.
-- Standardized UI pieces exported: `createInput`, `createButton`, `createCard`, `createModal`.
-- Red-first styling inspired by gearvn.com, no design system dependencies.
-- Vanilla ESM, works in any modern bundler or `<script type="module">`.
+## Highlights
+- Full cart CRUD (add, edit, delete) with totals + empty state built in.
+- Modern ESM, no frameworks required; works in bundlers or plain `<script type="module">`.
+- Drop-in styling via `styles.css` (customize with CSS variables).
+- Tiny API surface: `CartUI`, `mountCart`, and UI atoms `createButton`, `createInput`, `createCard`, `createModal`.
 
-## Quick start
-1) Install after publishing:  
-`npm install trackifi-cart`
-
-2) Mount the cart somewhere in your app:
-```js
-import { mountCart } from "trackifi-cart";
-import "trackifi-cart/src/styles.css"; // adjust path if you copy assets elsewhere
-
-const cart = mountCart("#cart-root", {
-  currencySymbol: "$",
-  initialItems: [
-    { name: "HyperX Alloy Origins", price: 120, quantity: 1 },
-    { name: "Logitech G Pro X Superlight", price: 159, quantity: 2 }
-  ],
-  onItemsChange: (items) => console.log("Updated cart", items)
-});
+## Install
+```bash
+npm install trackifi-cart
+# or local tarball after `npm pack`
+# npm install ../trackifi-cart-0.1.0.tgz
 ```
 
-3) Add the container to your markup:
-```html
-<div id="cart-root"></div>
-```
-
-### Vanilla HTML demo snippet
+## Quick usage (vanilla HTML)
 ```html
 <link rel="stylesheet" href="node_modules/trackifi-cart/src/styles.css" />
 <div id="cart"></div>
 <script type="module">
   import { mountCart } from "./node_modules/trackifi-cart/src/index.js";
-  mountCart("#cart", { currencySymbol: "₫" });
-  // CRUD actions are built-in; listen with onItemsChange if you need syncing.
+
+  mountCart("#cart", {
+    currencySymbol: "₫",
+    initialItems: [
+      { name: "RTX 4070", price: 14990000, quantity: 1 },
+      { name: "SSD 1TB", price: 2100000, quantity: 2 }
+    ],
+    onItemsChange: (items) => console.log("Cart updated", items)
+  });
 </script>
 ```
 
-## API surface
+## Usage in React (or any framework)
+```jsx
+import { useEffect, useRef } from "react";
+import { mountCart } from "trackifi-cart";
+import "trackifi-cart/src/styles.css";
+
+export default function CartWidget() {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const cart = mountCart(ref.current, {
+      currencySymbol: "$",
+      initialItems: [{ name: "Monitor 240Hz", price: 329, quantity: 1 }],
+      onItemsChange: (items) => console.log(items),
+    });
+    return () => {
+      if (ref.current) ref.current.innerHTML = "";
+    };
+  }, []);
+
+  return <div ref={ref} />;
+}
+```
+
+## API
+- `mountCart(selectorOrElement, options)` → `CartUI` instance.
 - `new CartUI({ container, currencySymbol?, initialItems?, onItemsChange? })`
-  - `container`: HTMLElement or selector.
-  - `currencySymbol`: string, defaults to `$`.
-  - `initialItems`: `{ name, price, quantity }[]`.
-  - `onItemsChange`: callback receiving the updated items array.
-- `mountCart(selectorOrElement, options)` convenience wrapper around `CartUI`.
-- UI atoms: `createButton`, `createInput`, `createCard`, `createModal`.
+  - `container`: DOM element or selector string (required).
+  - `currencySymbol`: string prefix for prices, default `$`.
+  - `initialItems`: array of `{ name, price, quantity }`.
+  - `onItemsChange(items)`: callback fired after any CRUD action.
+- UI atoms you can reuse:
+  - `createButton({ label, variant?, type?, onClick? })`
+  - `createInput({ label, name, type?, placeholder?, value?, required? })`
+  - `createCard({ title, meta?, body, footer })`
+  - `createModal(title)` → `{ overlay, open, close, setBody }`
 
-## File structure
-- `src/index.js` – library entry, exports `CartUI`, `mountCart`, and UI atoms.
-- `src/styles.css` – red GearVN-inspired theme with cards, modals, buttons, inputs.
-- `package.json` – ESM entry points; `files` whitelist set for npm packaging.
+## Styling & theming
+Override the CSS variables in your host app to theme quickly:
+```css
+:root {
+  --red-600: #d6001c;
+  --card: #161616;
+  --text: #f7f7f7;
+  --radius: 14px;
+}
+```
+The `style` field in `package.json` points to `src/styles.css`; most bundlers will include it when you import the CSS directly (`import "trackifi-cart/src/styles.css"`).
 
-## Packaging & publishing to npm
-1) Update metadata in `package.json` (name, author, version).
-2) Optional: validate syntax.  
-   `npm run check`
-3) Test the tarball locally.  
-   `npm pack`
-   - This produces `trackifi-cart-<version>.tgz`. Install it elsewhere with `npm install ../trackifi-cart-<version>.tgz` to verify.
-4) Log in and publish:
-   ```bash
-   npm login
-   npm version patch   # or minor/major
-   npm publish --access public
-   ```
-5) Consumers then install with `npm install <your-package-name>` and import `src/index.js` and `src/styles.css` (or bundle them into their own build).
+## Local development & validation
+- Syntax check: `npm run check` (pure JS syntax validation). Your environment needs Node installed.
+- Demo page: open `index.html` in a browser to see the cart running with sample data.
+- Publish flow:
+  ```bash
+  npm pack                              # create trackifi-cart-<version>.tgz
+  npm version patch|minor|major         # bump
+  npm publish --access public           # push to npm
+  ```
 
-### Bundling notes
-The code is modern ESM with no dependencies. If you want a compiled distribution, add a bundler like `tsup` or `rollup` and point `package.json` `main/module/style` to the built files, but the current setup ships as-is for simplicity.
-
-## Customization tips
-- Override colors by redefining the CSS variables in your host app (e.g., `--red-600`, `--card`, `--text`).
-- Use the `onItemsChange` hook to sync totals to your backend or app state.
-- Swap `currencySymbol` to match your locale without touching logic.
+## Notes
+- The library is framework-agnostic; it manages its own DOM and styling.
+- Use `onItemsChange` to sync with your app state/backend or to drive analytics.
+- If you need a bundled/compiled build, add a bundler (Rollup/tsup) and point `main/module/style` to the dist files.
