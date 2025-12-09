@@ -18,28 +18,102 @@ const createElement = (tag, className, attributes = {}) => {
   return el;
 };
 
-export const createButton = ({ label, variant = "primary", type = "button", onClick }) => {
-  const button = createElement("button", `cart-btn cart-btn-${variant}`, { type });
+export const createButton = ({
+  label,
+  variant = "primary",
+  type = "button",
+  onClick,
+  disabled = false,
+  ariaLabel,
+}) => {
+  const button = createElement("button", `cart-btn cart-btn-${variant}`, {
+    type,
+    "aria-label": ariaLabel || label,
+    ...(disabled && { disabled: "true" }),
+  });
   button.textContent = label;
+  if (disabled) {
+    button.disabled = true;
+  }
   if (onClick) {
     button.addEventListener("click", onClick);
   }
   return button;
 };
 
-export const createInput = ({ label, name, type = "text", placeholder, value = "", required = true }) => {
+export const createInput = ({
+  label,
+  name,
+  type = "text",
+  placeholder,
+  value = "",
+  required = true,
+  options = [],
+  rows = 3,
+}) => {
   const wrapper = createElement("label", "cart-field");
   const span = createElement("span", "cart-field-label");
   span.textContent = label;
-  const input = createElement("input", "cart-input", {
-    name,
-    type,
-    placeholder: placeholder || label,
-    value,
-    required: required ? "true" : undefined,
-    step: type === "number" ? "0.01" : undefined,
-    min: type === "number" ? "0" : undefined
-  });
+
+  let input;
+
+  if (type === "select") {
+    input = createElement("select", "cart-input cart-select", {
+      name,
+      required: required ? "true" : undefined,
+      "aria-label": label,
+    });
+
+    if (placeholder) {
+      const placeholderOption = createElement("option", "", {
+        value: "",
+        disabled: "true",
+        selected: "true",
+      });
+      placeholderOption.textContent = placeholder;
+      input.append(placeholderOption);
+    }
+
+    options.forEach((opt) => {
+      const option = createElement("option", "", { value: opt.value || opt });
+      option.textContent = opt.label || opt;
+      if (value === (opt.value || opt)) {
+        option.selected = true;
+      }
+      input.append(option);
+    });
+  } else if (type === "textarea") {
+    input = createElement("textarea", "cart-input cart-textarea", {
+      name,
+      placeholder: placeholder || label,
+      required: required ? "true" : undefined,
+      rows: rows.toString(),
+      "aria-label": label,
+    });
+    input.value = value;
+  } else if (type === "checkbox" || type === "radio") {
+    wrapper.classList.add("cart-field-inline");
+    input = createElement("input", "cart-input-checkbox", {
+      name,
+      type,
+      value: value || "on",
+      "aria-label": label,
+    });
+    wrapper.append(input, span);
+    return { wrapper, input };
+  } else {
+    input = createElement("input", "cart-input", {
+      name,
+      type,
+      placeholder: placeholder || label,
+      value,
+      required: required ? "true" : undefined,
+      step: type === "number" ? "0.01" : undefined,
+      min: type === "number" ? "0" : undefined,
+      "aria-label": label,
+    });
+  }
+
   wrapper.append(span, input);
   return { wrapper, input };
 };
@@ -107,7 +181,7 @@ export class CartUI {
     container,
     currencySymbol = "$",
     initialItems = [],
-    onItemsChange
+    onItemsChange,
   } = {}) {
     if (!container) throw new Error("CartUI requires a container element.");
     this.container = container;
@@ -117,7 +191,7 @@ export class CartUI {
       id: generateId(),
       name: item.name,
       price: Number(item.price) || 0,
-      quantity: Number(item.quantity) || 1
+      quantity: Number(item.quantity) || 1,
     }));
     this.render();
   }
@@ -130,7 +204,8 @@ export class CartUI {
     const title = createElement("h1", "cart-title");
     title.textContent = "Shopping Cart";
     const subtitle = createElement("p", "cart-subtitle");
-    subtitle.textContent = "Add, edit, or remove products with a GearVN-inspired red glow.";
+    subtitle.textContent =
+      "Add, edit, or remove products with a GearVN-inspired red glow.";
     header.append(title, subtitle);
 
     this.summary = createElement("div", "cart-summary");
@@ -145,26 +220,50 @@ export class CartUI {
       this.renderItems();
     }
 
-    this.container.append(header, this.buildAddForm(), this.summary, this.itemsGrid);
+    this.container.append(
+      header,
+      this.buildAddForm(),
+      this.summary,
+      this.itemsGrid
+    );
     this.updateSummary();
   }
 
   buildAddForm() {
     const card = createElement("div", "cart-add-card");
     const form = createElement("form", "cart-add-form");
-    const nameField = createInput({ label: "Product name", name: "name", placeholder: "Red HyperX Keyboard" });
-    const priceField = createInput({ label: "Price", name: "price", type: "number", placeholder: "120.00" });
-    const quantityField = createInput({ label: "Quantity", name: "quantity", type: "number", value: "1" });
+    const nameField = createInput({
+      label: "Product name",
+      name: "name",
+      placeholder: "Red HyperX Keyboard",
+    });
+    const priceField = createInput({
+      label: "Price",
+      name: "price",
+      type: "number",
+      placeholder: "120.00",
+    });
+    const quantityField = createInput({
+      label: "Quantity",
+      name: "quantity",
+      type: "number",
+      value: "1",
+    });
     const action = createElement("div", "cart-actions");
     const addButton = createButton({ label: "Add to cart", type: "submit" });
     action.append(addButton);
-    form.append(nameField.wrapper, priceField.wrapper, quantityField.wrapper, action);
+    form.append(
+      nameField.wrapper,
+      priceField.wrapper,
+      quantityField.wrapper,
+      action
+    );
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const newItem = {
         name: nameField.input.value.trim(),
         price: Number(priceField.input.value),
-        quantity: Number(quantityField.input.value) || 1
+        quantity: Number(quantityField.input.value) || 1,
       };
       if (!newItem.name) return;
       this.addItem(newItem);
@@ -200,21 +299,23 @@ export class CartUI {
       const editBtn = createButton({
         label: "Edit",
         variant: "ghost",
-        onClick: () => this.openEditModal(item)
+        onClick: () => this.openEditModal(item),
       });
       const deleteBtn = createButton({
         label: "Delete",
         variant: "outline",
-        onClick: () => this.deleteItem(item.id)
+        onClick: () => this.deleteItem(item.id),
       });
       const footerActions = createElement("div", "cart-card-actions");
       footerActions.append(editBtn, deleteBtn);
 
       const card = createCard({
         title: item.name,
-        meta: `Line total: ${this.currencySymbol}${(item.price * item.quantity).toFixed(2)}`,
+        meta: `Line total: ${this.currencySymbol}${(
+          item.price * item.quantity
+        ).toFixed(2)}`,
         body,
-        footer: footerActions
+        footer: footerActions,
       });
 
       this.itemsGrid.append(card);
@@ -226,7 +327,7 @@ export class CartUI {
       id: generateId(),
       name: item.name,
       price: Number(item.price) || 0,
-      quantity: Number(item.quantity) || 1
+      quantity: Number(item.quantity) || 1,
     };
     this.items = [next, ...this.items];
     this.renderItems();
@@ -241,7 +342,7 @@ export class CartUI {
             ...item,
             name: updates.name ?? item.name,
             price: updates.price ?? item.price,
-            quantity: updates.quantity ?? item.quantity
+            quantity: updates.quantity ?? item.quantity,
           }
         : item
     );
@@ -265,13 +366,22 @@ export class CartUI {
   openEditModal(item) {
     const modal = createModal("Edit item");
     const form = createElement("form", "cart-edit-form");
-    const nameField = createInput({ label: "Product name", name: "name", value: item.name });
-    const priceField = createInput({ label: "Price", name: "price", type: "number", value: item.price.toString() });
+    const nameField = createInput({
+      label: "Product name",
+      name: "name",
+      value: item.name,
+    });
+    const priceField = createInput({
+      label: "Price",
+      name: "price",
+      type: "number",
+      value: item.price.toString(),
+    });
     const quantityField = createInput({
       label: "Quantity",
       name: "quantity",
       type: "number",
-      value: item.quantity.toString()
+      value: item.quantity.toString(),
     });
     const actions = createElement("div", "cart-actions");
     const saveBtn = createButton({ label: "Save changes", type: "submit" });
@@ -281,16 +391,21 @@ export class CartUI {
       onClick: (event) => {
         event.preventDefault();
         modal.close();
-      }
+      },
     });
     actions.append(cancelBtn, saveBtn);
-    form.append(nameField.wrapper, priceField.wrapper, quantityField.wrapper, actions);
+    form.append(
+      nameField.wrapper,
+      priceField.wrapper,
+      quantityField.wrapper,
+      actions
+    );
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       this.updateItem(item.id, {
         name: nameField.input.value.trim(),
         price: Number(priceField.input.value),
-        quantity: Number(quantityField.input.value)
+        quantity: Number(quantityField.input.value),
       });
       modal.close();
     });
@@ -299,9 +414,14 @@ export class CartUI {
   }
 
   updateSummary() {
-    const total = this.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const total = this.items.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0
+    );
     const count = this.items.reduce((acc, item) => acc + item.quantity, 0);
-    this.summaryTotal.textContent = `Total: ${this.currencySymbol}${total.toFixed(2)}`;
+    this.summaryTotal.textContent = `Total: ${
+      this.currencySymbol
+    }${total.toFixed(2)}`;
     this.summaryCount.textContent = `Items: ${count}`;
   }
 

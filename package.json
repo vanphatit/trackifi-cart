@@ -1,20 +1,26 @@
 {
   "name": "trackifi-cart",
-  "version": "0.1.0",
-  "description": "Reusable shopping cart UI library with red GearVN-inspired styling.",
+  "version": "0.2.0",
+  "description": "Reusable shopping cart UI library with red GearVN-inspired styling. Includes buttons, inputs, modals, and cards with accessibility support.",
   "type": "module",
   "main": "src/index.js",
   "module": "src/index.js",
+  "types": "index.d.ts",
   "style": "src/styles.css",
   "files": [
     "src",
-    "README.md"
+    "index.d.ts",
+    "README.md",
+    "CHANGELOG.md"
   ],
   "keywords": [
     "cart",
     "shopping-cart",
     "ui-library",
-    "vanilla-js"
+    "vanilla-js",
+    "accessibility",
+    "forms",
+    "components"
   ],
   "scripts": {
     "check": "node -c src/index.js"
